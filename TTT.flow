@@ -1,0 +1,27 @@
+blockdiag {
+     rows -> wt1 -> wt2 -> req;
+
+     rows [type=start, initial="[{'c1':4,'c2':5,'c3':6}, {'c1':7,'c2':8,'c3':9}, {'c1':1,'c2':2,'c3':3}]", width=350];
+     wt1 [type=sync, wait="['X'+str(t['c1'])]", width=200]
+     wt2 [type=sync, wait="['X'+str(t['c2'])]",width=200]
+     req [type=sync, req="['O'+str(t['c3'])]",width=200]
+
+    st1 -> rq11 -> rq12;
+    st1 [type=start]
+    rq11 [type=sync, req="['X1']"]
+    rq12 [type=sync, req="['X2']"]
+
+    st2 -> rq21 -> rq22;
+    st2 [type=start]
+    rq21 [type=sync, req="['X4']"]
+    rq22 [type=sync, req="['X5']"]
+
+    # For debugging
+    class hidden [color = none, style = none, textcolor = white];
+    stt -> listener -> logger [style = "none"];
+    listener -> listener [style = "none"];
+    listener [type=sync, wait="lambda e : True", class = "hidden", autoformat='false'];
+    logger [type=logger, label="Events log", autoformat='false']
+    stt [type=start, class = "hidden", autoformat='false'];
+
+}
