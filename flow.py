@@ -3,10 +3,6 @@ import copy, random, sys, os, glob
 
 from NodeLibrary import *
 
-if len(sys.argv) != 2:
-  print("Usage: python flow.py [diagram file name without the .flow extension]")
-  sys.exit(1)
-
 statecount = 0
 builder.DiagramNode.type = "pass"
 builder.DiagramNode.SYNC = None
@@ -24,11 +20,9 @@ builder.DiagramNode.node_type = None
 builder.DiagramNode.set = None
 builder.DiagramNode.threshold = None
 
-model = parser.parse_file(sys.argv[1] + ".flow")
-diagram = builder.ScreenNodeBuilder.build(model)
+builder.Diagram.initialization_code = None
 
 node_types = (StartType(), SyncType(), LoopType(), PassType(), PermutationType(), JoinType(), WaitForSetType(), LoggerType())
-
 
 def setup_diagram(diagram):
   for n in diagram.nodes:
@@ -133,5 +127,11 @@ def run_diagram(diagram):
   except IndexError:
     pass
 
-
-run_diagram(diagram)
+if __name__ == "__main__":
+  if len(sys.argv) != 2:
+    print("Usage: python flow.py [diagram file name without the .flow extension]")
+  else:
+    model = parser.parse_file(sys.argv[1] + ".flow")
+    diagram = builder.ScreenNodeBuilder.build(model)
+    run_init(diagram)
+    run_diagram(diagram)
