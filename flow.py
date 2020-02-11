@@ -19,10 +19,15 @@ builder.DiagramNode.keys = None
 builder.DiagramNode.node_type = None
 builder.DiagramNode.set = None
 builder.DiagramNode.threshold = None
+builder.DiagramNode.tokens_display = "full"
+builder.DiagramNode.priority=0
 
+builder.Diagram.run = None
 builder.Diagram.initialization_code = None
+builder.Diagram.event_selection_mechanism = 'random'
 
 node_types = (StartType(), SyncType(), LoopType(), PassType(), PermutationType(), JoinType(), WaitForSetType(), LoggerType())
+
 
 def setup_diagram(diagram):
   for n in diagram.nodes:
@@ -60,13 +65,14 @@ def create_run_directory():
       os.remove(f)
 
 
-def print_state():
+def print_state(terminal_output=True):
   global statecount
   statecount = statecount + 1
-  
-  print("--- State:", statecount, "---")
-  for n in diagram.nodes:
-    print(n.id, "-->", "tokens:", n.tokens, "sync:", n.sync)
+
+  if terminal_output:
+    print("--- State:", statecount, "---")
+    for n in diagram.nodes:
+      print(n.id, "-->", "tokens:", n.tokens, "sync:", n.sync)
   
   for n in diagram.nodes:
     n.node_type.state_visualization(n)
@@ -88,11 +94,19 @@ def step_to_next_state(diagram):
 
 
 def select_event(diagram):
-  requested = [r for n in diagram.nodes for sync in n.sync if 'REQ' in sync for r in sync['REQ']]
+  requested = [(r,n.priority) for n in diagram.nodes for sync in n.sync if 'REQ' in sync for r in sync['REQ']]
   block_statements = [sync['BLOCK'] for n in diagram.nodes for sync in n.sync if 'BLOCK' in sync]
-  candidates = [e for e in requested if not any([b(e) for b in block_statements])]
-  e = random.choice(candidates)
-  return e
+  candidates = [(e,p) for (e,p) in requested if not any([b(e) for b in block_statements])]
+  
+  if diagram.event_selection_mechanism == 'random':
+    pass
+  elif diagram.event_selection_mechanism == 'priority':
+    p = max(candidates, key = lambda e: int(e[1]))[1]
+    candidates = [e for e in candidates if e[1]==p]
+  else:
+    raise Exception("Illegal value of event_selection_mechanism:" + diagram.event_selection_mechanism)
+
+  return random.choice(candidates)[0]
 
 
 def wake_up_tokens(diagram, e):
@@ -124,8 +138,9 @@ def run_diagram(diagram):
       print("********************** Event:", e, "***************************")
       
       wake_up_tokens(diagram, e)
-  except IndexError:
+  except (ValueError, IndexError):
     pass
+
 
 if __name__ == "__main__":
   if len(sys.argv) != 2:
@@ -133,5 +148,9 @@ if __name__ == "__main__":
   else:
     model = parser.parse_file(sys.argv[1] + ".flow")
     diagram = builder.ScreenNodeBuilder.build(model)
-    run_init(diagram)
-    run_diagram(diagram)
+    
+    if diagram.run is None:
+      run_init(diagram)
+      run_diagram(diagram)
+    else:
+      exec(diagram.run)
