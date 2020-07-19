@@ -1,0 +1,75 @@
+diagram {
+initialization_code="
+
+global X
+X=lambda i: 'X'+str(i)
+
+global O
+O=lambda i: 'O'+str(i)
+
+global anyX
+anyX = (lambda e: e[0]=='X')
+
+global anyMove
+anyMove = (lambda e: anyX(e) or anyO(e))
+
+global anyO
+anyO = (lambda e: e[0]=='O')
+
+global toX
+toX = (lambda e: 'X' + e[1:])
+
+global toO
+toO = (lambda e: 'O' + e[1:])
+"
+    event_selection_mechanism = "priority"
+
+    lines [type=start, initial=
+    "[{'line':[1,2,3]}, 
+      {'line':[4,5,6]}, 
+      {'line':[7,8,9]}, 
+      {'line':[1,4,7]}, 
+      {'line':[2,5,8]}, 
+      {'line':[3,6,9]}, 
+      {'line':[1,5,9]}, 
+      {'line':[3,5,7]}]", width=350];
+
+
+    lines -> def_wt1 -> def_join -> def_req
+    lines -> def_wt2 -> def_join
+    lines -> def_wt3 -> def_join
+
+    def_wt1 -> xwin_join -> xwin_req
+    def_wt2 -> xwin_join
+    def_wt3 -> xwin_join
+
+
+    def_wt1 [type=sync, wait="[X(line[0])]", width=250]
+    def_wt2 [type=sync, wait="[X(line[1])]", width=250]
+    def_wt3 [type=sync, wait="[X(line[2])]", width=250]
+
+    def_req [type=sync, req="[O(last)]",  width=350]
+    def_join [type=join, count=2, join_by="['line']", join="lambda g: { 'last': (set(g[0]['line']) - {int(t['event'][1]) for t in g}).pop()}", width=400]
+
+    xwin_join [type=join, count=3, join_by="['line']", join="lambda g: {}", width=400]
+    xwin_req [type=sync, req="['X Player wins']",  width=350]
+
+
+    ########################################################################
+
+    st -> r1 -> r2 -> r3;
+    st [type=start]
+    r1 [type=sync, req="[X(5)]"]
+    r2 [type=sync, req="[X(6)]"]
+    r3 [type=sync, req="[X(4)]"]
+
+    # For debugging
+    class hidden [color = none, style = none, textcolor = white];
+    stt -> listener -> logger -> listener [style = "none"];
+    listener [type=sync, wait="lambda e : True", class = "hidden", autoformat='false'];
+    logger [type=logger, label="Events log", autoformat='false']
+    stt [type=start, class = "hidden", autoformat='false'];
+
+
+
+}

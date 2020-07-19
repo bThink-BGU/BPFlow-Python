@@ -1,0 +1,12 @@
+blockdiag {
+    st  -> wt1
+    st  -> st
+    wt1 -> wt2
+    wt2 -> req [label=approve]
+
+
+    st [type=start];
+    wt1  [type=sync, wait="p=propose(id?,grade)"];
+    wt2  [type=sync, wait="[approve(p), approve(propose(id,?))]", width=200];
+    req  [type=sync, wait="['cold']", block="['hot']"];
+}

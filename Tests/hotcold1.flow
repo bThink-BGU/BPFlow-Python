@@ -1,0 +1,25 @@
+diagram {
+    st1 -> lp1 -> bs1 -> lp1;
+    st2 -> lp2 -> bs2 -> lp2;
+    st3 -> in1 -> in2 -> in1;
+
+    st1 [type=start];
+    bs1  [type=sync, req="['hot']"];
+    lp1 [type=loop, count=3];
+
+    st2 [type=start];
+    bs2  [type=sync, req="['cold']"];
+    lp2 [type=loop, count=3];
+
+    st3 [type=start];
+    in1  [type=sync, wait="['hot']", block="['cold']"];
+    in2  [type=sync, wait="['cold']", block="['hot']"];
+
+    # For debugging
+    class hidden [color = none, style = none, textcolor = white];
+    stt -> listener -> logger -> listener [style = "none"];
+    listener [type=sync, wait="lambda e : True", class = "hidden", autoformat='false'];
+    logger [type=logger, label="Events log", autoformat='false']
+    stt [type=start, class = "hidden", autoformat='false'];
+
+}
