@@ -263,6 +263,7 @@ class JoinType(NodeType):
 
         return (tokens, [])
 
+    #   TODO change this node to work like WaitForSetType - i.e., without using transformation. 
     def transformation(self, tokens: Sequence[Dict], node: DiagramNode, port: str) -> Sequence[Dict]:
         groups=self.get_groups(node)
         if len(groups) != 0:
