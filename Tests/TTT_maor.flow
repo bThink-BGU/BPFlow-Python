@@ -1,0 +1,53 @@
+blockdiag {
+initialization_code="
+global X
+X = lambda i : 'X'+str(i)
+
+global O
+O=lambda i : 'O'+str(i)
+
+global perm3
+perm3 = lambda a : [[a[0],a[1],a[2]],[a[0],a[2],a[1]],[a[1],a[0],a[2]],[a[2],a[0],a[1]], [a[1],a[2],a[0]],[a[2],a[1],a[0]]]
+
+global Path
+Path = [['1','2','3'],['4','5','6'],['7','8','9'],['1','4','7'],['2','5','8'],['3','6','9'],['1','5','9'],['3','5','7']]
+
+global Lines
+Lines =[]
+for p in Path:
+    Lines.extend(perm3(p))
+
+global All
+All= lambda A:[A(i) for i in range(1,9)]
+
+global AllMove
+AllMove=lambda : All(X).extern(All(O))
+"
+
+
+    st3 -> wa -> rq3;
+
+    st3 [type=start, initial="[{'path':Path[0]} ]", width=400];
+    wa [type=waitall, waitall="[[X(i) for i in path]]"]
+    rq3 [type=sync, req="['Player X wins'], block =[AllMove()]"]
+
+
+
+
+    st2 -> rqX1  ;
+
+    st2 [type=start, initial="[{'i':i }for i in range(1,4)]", width=400];
+    rqX1[type = sync , req="[X(i)]"]
+
+
+    # For debugging
+    class hidden [color = none, style = none, textcolor = white];
+    stt -> listener -> "Event viewer" -> listener [style = "none"];
+
+    listener [type=sync,
+              wait="['X'+str(i) for i in range(1,9)]+['O'+str(i) for i in range(1,9)]",
+              class = "hidden", autoformat='false'];
+
+    stt [type=start, class = "hidden", autoformat='false'];
+
+}

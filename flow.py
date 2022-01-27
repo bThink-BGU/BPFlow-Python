@@ -7,7 +7,7 @@ import glob
 
 from NodeLibrary import *
 
-statecount = 0
+statecount = 0                        # const
 builder.DiagramNode.type = "pass"
 builder.DiagramNode.SYNC = None
 builder.DiagramNode.T = None
@@ -28,12 +28,15 @@ builder.DiagramNode.priority = 0
 builder.DiagramNode.join_by = []
 builder.DiagramNode.join = None
 
+builder.DiagramNode.waitall = "[]"
+
+
 builder.Diagram.run = None
 builder.Diagram.initialization_code = ""
 builder.Diagram.event_selection_mechanism = 'random'
 
 node_types = (StartType(), SyncType(), LoopType(), PassType(), PermutationType(),
-              JoinType(), WaitForSetType(), LoggerType())
+              JoinType(), WaitForSetType(), LoggerType(), WaitAll())
 
 
 def traverse_nodes(n):
