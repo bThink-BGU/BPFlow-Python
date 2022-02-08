@@ -1,0 +1,24 @@
+blockdiag {
+    st -> join ->  req;
+
+    st [type=start, initial="[{1:'1'},{2:'2'},{'third':'3'}]"];
+    join [type=join]
+    req [type=sync, req="['O'+third]"]
+
+
+
+
+
+
+
+    # For debugging
+    class hidden [color = none, style = none, textcolor = white];
+    stt -> listener -> "Event viewer" -> listener [style = "none"];
+
+    listener [type=sync,
+              wait="['X'+str(i) for i in range(1,9)]+['O'+str(i) for i in range(1,9)]",
+              class = "hidden", autoformat='false'];
+
+    stt [type=start, class = "hidden", autoformat='false'];
+
+}

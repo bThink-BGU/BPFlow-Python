@@ -27,7 +27,7 @@ AllMove=lambda : All(X).extern(All(O))
 
     st3 -> wa -> rq3;
 
-    st3 [type=start, initial="[{'path':Path[0]} ]", width=400];
+    st3 [type=start, initial="[{'path':path} for path in Path ]", width=400];
     wa [type=waitall, waitall="[[X(i) for i in path]]"]
     rq3 [type=sync, req="['Player X wins'], block =[AllMove()]"]
 

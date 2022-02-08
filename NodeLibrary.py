@@ -358,12 +358,12 @@ class WaitAll(NodeType):
     def synchronization(self, tokens: Sequence[Dict], sync: Sequence[Dict], node: DiagramNode) -> Sequence[Dict]:
         sync = copy.deepcopy(sync)
         for t in tokens:
-            t = copy.deepcopy(t)
+
 
             if node.waitall is not "[]":
                 if "WAITALL" not in t.keys():
                     t['WAITALL']= eval(node.waitall, globals(), t)
-
+                t = copy.deepcopy(t)
                 t['WAIT'] =(lambda w : w if callable(w) else self.genF(w))(list(itertools.chain(copy.deepcopy(t['WAITALL']))))   # need to be the union
                 # t['WAITALL']= [(lambda w :w if callable(w) else self.genF(w))(eval(w, globals(), t)) for w in node.waitall]
 
