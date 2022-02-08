@@ -342,8 +342,8 @@ class WaitAll(NodeType):
                 t = copy.deepcopy(t)
                 # if "WAITALL" in t:
                 #     del t["WAITALL"]
-                if "WAIT" in t:
-                    del t["WAIT"]
+                # if "WAIT" in t:
+                #     del t["WAIT"]
                 n.label += "\n" + str(t)
                 n.height += 20
         elif n.tokens_display == 'count only':
@@ -358,13 +358,21 @@ class WaitAll(NodeType):
     def synchronization(self, tokens: Sequence[Dict], sync: Sequence[Dict], node: DiagramNode) -> Sequence[Dict]:
         sync = copy.deepcopy(sync)
         for t in tokens:
+            t = copy.deepcopy(t)
+            
+            if "event" in t.keys():
+                e = t["event"]
+                t["le"] = e
+                for waitlist in t["WAITALL"]:
+                    waitlist.remove(e)
+                del t["event"]
 
 
             if node.waitall is not "[]":
                 if "WAITALL" not in t.keys():
                     t['WAITALL']= eval(node.waitall, globals(), t)
-                t = copy.deepcopy(t)
-                t['WAIT'] =(lambda w : w if callable(w) else self.genF(w))(list(itertools.chain(copy.deepcopy(t['WAITALL']))))   # need to be the union
+
+                t['WAIT'] = self.genF(list(itertools.chain(copy.deepcopy(t['WAITALL']))))   # need to be the union
                 # t['WAITALL']= [(lambda w :w if callable(w) else self.genF(w))(eval(w, globals(), t)) for w in node.waitall]
 
             sync.append(t)
@@ -374,31 +382,20 @@ class WaitAll(NodeType):
             # except KeyError:
             #     t["COUNT"] = int(node.count)
 
-        return (sync, sync)
+            print(f"SYNC={sync}")
+        return (copy.deepcopy(sync), copy.deepcopy(sync))
 
     def transformation(self, tokens: Sequence[Dict], node: DiagramNode, port: str) -> Sequence[Dict]:
         nxtt = []
 
         for t in tokens:
-
-
             try:
-                e = t["event"]
-                t["le"] = e
-                if e is not None:
-                    del t["event"]
-                    for waitlist in t["WAITALL"]:
-                        waitlist.remove(e)
-                        if len(waitlist) == 0:
-                            nxtt.append(copy.deepcopy(t))
+                if [] in t["WAITALL"]:
+                    nxtt.append(copy.deepcopy(t))
+            
 
             except KeyError:
                 pass
-
-
-
-            # if not t["WAITALL"]:
-            #     nxtt.append(t)
 
         return nxtt
 
@@ -411,21 +408,21 @@ class LoggerType(NodeType):
 
     def node_manipulator(self, node: DiagramNode) -> None:
         node.label = 'LOG'
-        node.log = []
+        node.loog = []
         super().node_manipulator(node)
 
     def state_visualization(self, n: DiagramNode) -> None:
         n.label = n.org_label
-        n.height = 50
+        n.height = 100
 
         n.label += "\n---------------------"
-        for t in n.log:
+        for t in n.loog:
             n.label += "\n" + str(t)
             n.height += 10
 
     def synchronization(self, tokens: Sequence[Dict], sync: Sequence[Dict], node: DiagramNode) -> (
             Sequence[Dict], Sequence[Dict]):
         if len(tokens) != 0:
-            node.log.append(tokens)
+            node.loog += tokens
 
         return (tokens, [])
