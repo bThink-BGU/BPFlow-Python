@@ -53,6 +53,9 @@ class NodeType(metaclass=abc.ABCMeta):
             Sequence[Dict], Sequence[Dict]):
         return (tokens, [])
 
+    def keep(self, tokens: Sequence[Dict], node: DiagramNode) -> Sequence[Dict]:
+        return []
+
 
 ######################################################################################
 class StartType(NodeType):
@@ -133,7 +136,6 @@ class SyncType(NodeType):
                 t['REQ'] = eval(node.req, globals(), t)
 
             if node.wait != "[]":
-                print(t)
                 w = eval(node.wait, globals(), t)
                 t['WAIT'] = w if callable(w) else self.genF(w)
 
@@ -263,7 +265,7 @@ class JoinType(NodeType):
         return ret
 
     def synchronization(self, tokens: Sequence[Dict], sync: Sequence[Dict], node: DiagramNode) -> (
-    Sequence[Dict], Sequence[Dict]):
+            Sequence[Dict], Sequence[Dict]):
         if len(tokens) != 0:
             node.log.extend(tokens)
 
@@ -329,26 +331,31 @@ class WaitAll(NodeType):
 
     def node_manipulator(self, node: DiagramNode) -> None:
         node.label = "WAIT All  OF\n" + node.waitall
-        # node.waitall =[] if node.waitall == '[]' else node.waitall.split(",")
         node.width = 400
         node.height = 300
         super().node_manipulator(node)
 
     def state_visualization(self, n: DiagramNode) -> None:
-        n.label = n.org_label + "\n-----------"
+        n.label = n.org_label + "\n"
         n.height = 300
         if n.tokens_display == 'full' or n.tokens_display == 'full with event':
             for t in n.sync:
                 t = copy.deepcopy(t)
-                # if "WAITALL" in t:
-                #     del t["WAITALL"]
-                # if "WAIT" in t:
-                #     del t["WAIT"]
-                n.label += "\n" + str(t)
+                del t["WAIT"]
+                n.label += f"{t}\n"
                 n.height += 20
+
+            n.label += "-----------\n"
+
+            for t in n.tokens:
+                t = copy.deepcopy(t)
+                del t["WAIT"]
+                n.label += f"{t}\n"
+                n.height += 20
+
         elif n.tokens_display == 'count only':
-            if len(n.sync) > 0:
-                n.label += "\n %d tokens" % len(n.sync)
+            if len(n.tokens) > 0:
+                n.label += "\n %d tokens" % len(n.tokens)
         else:
             raise Exception("Illegal value for 'tokens_display': " + n.tokens_display)
 
@@ -357,47 +364,39 @@ class WaitAll(NodeType):
 
     def synchronization(self, tokens: Sequence[Dict], sync: Sequence[Dict], node: DiagramNode) -> Sequence[Dict]:
         sync = copy.deepcopy(sync)
+        finished = []
         for t in tokens:
             t = copy.deepcopy(t)
-            
+
+            if "WAITALL" not in t.keys():
+                t['WAITALL'] = eval(node.waitall, globals(), t)
+
             if "event" in t.keys():
                 e = t["event"]
-                t["le"] = e
                 for waitlist in t["WAITALL"]:
                     waitlist.remove(e)
                 del t["event"]
 
+            t['WAIT'] = self.genF(list(itertools.chain(copy.deepcopy(t['WAITALL']))))  # need to be the union
 
-            if node.waitall is not "[]":
-                if "WAITALL" not in t.keys():
-                    t['WAITALL']= eval(node.waitall, globals(), t)
+            if [] in t['WAITALL']:
+                finished.append(t)
+            else:
+                sync.append(t)
 
-                t['WAIT'] = self.genF(list(itertools.chain(copy.deepcopy(t['WAITALL']))))   # need to be the union
-                # t['WAITALL']= [(lambda w :w if callable(w) else self.genF(w))(eval(w, globals(), t)) for w in node.waitall]
-
-            sync.append(t)
-
-            # try:
-            #     t["COUNT"] = t["COUNT"] - 1
-            # except KeyError:
-            #     t["COUNT"] = int(node.count)
-
-            print(f"SYNC={sync}")
-        return (copy.deepcopy(sync), copy.deepcopy(sync))
+        return (finished, sync)
 
     def transformation(self, tokens: Sequence[Dict], node: DiagramNode, port: str) -> Sequence[Dict]:
-        nxtt = []
+        nxt = []
 
         for t in tokens:
-            try:
-                if [] in t["WAITALL"]:
-                    nxtt.append(copy.deepcopy(t))
-            
+            if [] in t["WAITALL"]:
+                nxt.append(copy.deepcopy(t))
 
-            except KeyError:
-                pass
+        return nxt
 
-        return nxtt
+    def keep(self, tokens: Sequence[Dict], node: DiagramNode) -> Sequence[Dict]:
+        return [t for t in tokens if [] not in t['WAITALL']]
 
 
 ######################################################################################

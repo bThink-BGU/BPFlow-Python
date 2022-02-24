@@ -1,4 +1,5 @@
 blockdiag {
+
 initialization_code="
 global X
 X = lambda i : 'X'+str(i)
@@ -24,15 +25,11 @@ global AllMove
 AllMove=lambda : All(X) + All(O)
 "
 
-
     st3 -> wa -> rq3;
 
     st3 [type=start, initial="[{'path':path} for path in Path ]", width=400];
     wa [type=waitall, waitall="[[X(i) for i in path]]"]
-    rq3 [type=sync, req="['Player X wins']", block="AllMove()"]
-
-
-
+    rq3 [type=sync, req="['Player X wins']"]
 
     st2 -> rqX1  ;
 
@@ -45,7 +42,7 @@ AllMove=lambda : All(X) + All(O)
     stt -> listener -> logger -> listener [style = "none"];
 
     listener [type=sync,
-              wait="['X'+str(i) for i in range(1,9)]+['O'+str(i) for i in range(1,9)] + ['@']",
+              wait="lambda e: True",
               class = "hidden", autoformat='false'];
 
     logger [type=logger, label="Events log", autoformat='false']

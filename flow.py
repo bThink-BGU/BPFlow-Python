@@ -7,7 +7,7 @@ import glob
 
 from NodeLibrary import *
 
-statecount = 0                        # const
+statecount = 0  # const
 builder.DiagramNode.type = "pass"
 builder.DiagramNode.SYNC = None
 builder.DiagramNode.T = None
@@ -29,7 +29,6 @@ builder.DiagramNode.join_by = []
 builder.DiagramNode.join = None
 
 builder.DiagramNode.waitall = "[]"
-
 
 builder.Diagram.run = None
 builder.Diagram.initialization_code = ""
@@ -104,8 +103,8 @@ def print_state(terminal_output=True):
 def step_to_next_state(diagram):
     tmp, changed = {}, False
     for n in nodes:
-        tmp[n] = [t for pn, p in n.pred for t in pn.node_type.transformation(
-            pn.tokens, pn, p)]
+        tmp[n] = [t for pn, p in n.pred for t in
+                  pn.node_type.transformation(pn.tokens, pn, p)] + n.node_type.keep(n.tokens, n)
 
     for n in nodes:
         tmp[n], n.sync = n.node_type.synchronization(tmp[n], n.sync, n)
