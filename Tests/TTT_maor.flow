@@ -29,7 +29,7 @@ AllMove=lambda : All(X) + All(O)
 
     st3 [type=start, initial="[{'path':path} for path in Path ]", width=400];
     wa [type=waitall, waitall="[[X(i) for i in path]]"]
-    rq3 [type=sync, req="['Player X wins']"]
+    rq3 [type=sync, req="['Player X wins']", width=200]
 
     st2 -> rqX1  ;
 
@@ -45,7 +45,7 @@ AllMove=lambda : All(X) + All(O)
               wait="lambda e: True",
               class = "hidden", autoformat='false'];
 
-    logger [type=logger, label="Events log", autoformat='false']
+    logger [type=logger, label="Events log", autoformat='false', width=200]
     stt [type=start, class = "hidden", autoformat='false'];
 
 }

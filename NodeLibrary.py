@@ -332,12 +332,12 @@ class WaitAll(NodeType):
     def node_manipulator(self, node: DiagramNode) -> None:
         node.label = "WAIT All  OF\n" + node.waitall
         node.width = 400
-        node.height = 300
+        node.height = 50
         super().node_manipulator(node)
 
     def state_visualization(self, n: DiagramNode) -> None:
         n.label = n.org_label + "\n"
-        n.height = 300
+        n.height = 50
         if n.tokens_display == 'full' or n.tokens_display == 'full with event':
             for t in n.sync:
                 t = copy.deepcopy(t)
@@ -391,6 +391,7 @@ class WaitAll(NodeType):
 
         for t in tokens:
             if [] in t["WAITALL"]:
+                del t["WAITALL"]
                 nxt.append(copy.deepcopy(t))
 
         return nxt
