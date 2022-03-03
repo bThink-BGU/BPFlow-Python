@@ -29,6 +29,7 @@ builder.DiagramNode.join_by = []
 builder.DiagramNode.join = None
 
 builder.DiagramNode.waitall = "[]"
+builder.DiagramNode.at = "res"
 
 builder.Diagram.run = None
 builder.Diagram.initialization_code = ""
