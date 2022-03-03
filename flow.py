@@ -115,6 +115,10 @@ def step_to_next_state(diagram):
     return changed
 
 
+class EndOfRunException(Exception):
+    pass
+
+
 def select_event(diagram):
     requested = [(r, n.priority)
                  for n in nodes for sync in n.sync if 'REQ' in sync for r in sync['REQ']]
@@ -132,6 +136,9 @@ def select_event(diagram):
         raise Exception("Illegal value of event_selection_mechanism:" +
                         diagram.event_selection_mechanism)
 
+    if len(candidates) == 0:
+        raise EndOfRunException()
+        
     return random.choice(candidates)[0]
 
 
@@ -163,12 +170,12 @@ def run_diagram(diagram):
         while True:
             while step_to_next_state(diagram):
                 print_state()
-
+    
             e = select_event(diagram)
             print("*** Event:", e, "***")
-
+    
             wake_up_tokens(diagram, e)
-    except (ValueError, IndexError):
+    except EndOfRunException:
         pass
 
 

@@ -28,7 +28,7 @@ AllMove=lambda : All(X) + All(O)
     st3 -> wa -> rq3;
 
     st3 [type=start, initial="[{'path':path} for path in Path ]", width=400];
-    wa [type=waitall, waitall="[[X(i) for i in path]]"]
+    wa [type=waitall, waitall="[[X(i) for i in path], [X(1),X(2)]]"]
     rq3 [type=sync, req="['Player X wins']", width=200]
 
     st2 -> rqX1  ;
