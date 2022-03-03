@@ -1,7 +1,7 @@
 blockdiag {
     st -> join ->  req;
 
-    st [type=start, initial="[{1:'1'},{2:'2'},{third:'3'}]"];
+    st [type=start, initial="[{1:'1'},{2:'2'},{'third':'3'}]"];
     join [type=join]
     req [type=sync, req="['O'+third]"]
 

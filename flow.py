@@ -7,7 +7,7 @@ import glob
 
 from NodeLibrary import *
 
-statecount = 0
+statecount = 0  # const
 builder.DiagramNode.type = "pass"
 builder.DiagramNode.SYNC = None
 builder.DiagramNode.T = None
@@ -28,12 +28,15 @@ builder.DiagramNode.priority = 0
 builder.DiagramNode.join_by = []
 builder.DiagramNode.join = None
 
+builder.DiagramNode.waitall = "[]"
+builder.DiagramNode.at = "res"
+
 builder.Diagram.run = None
 builder.Diagram.initialization_code = ""
 builder.Diagram.event_selection_mechanism = 'random'
 
 node_types = (StartType(), SyncType(), LoopType(), PassType(), PermutationType(),
-              JoinType(), WaitForSetType(), LoggerType())
+              JoinType(), WaitForSetType(), LoggerType(), WaitAll())
 
 
 def traverse_nodes(n):
@@ -101,8 +104,8 @@ def print_state(terminal_output=True):
 def step_to_next_state(diagram):
     tmp, changed = {}, False
     for n in nodes:
-        tmp[n] = [t for pn, p in n.pred for t in pn.node_type.transformation(
-            pn.tokens, pn, p)]
+        tmp[n] = [t for pn, p in n.pred for t in
+                  pn.node_type.transformation(pn.tokens, pn, p)] + n.node_type.keep(n.tokens, n)
 
     for n in nodes:
         tmp[n], n.sync = n.node_type.synchronization(tmp[n], n.sync, n)
@@ -111,6 +114,10 @@ def step_to_next_state(diagram):
         n.tokens = tmp[n]
 
     return changed
+
+
+class EndOfRunException(Exception):
+    pass
 
 
 def select_event(diagram):
@@ -130,6 +137,9 @@ def select_event(diagram):
         raise Exception("Illegal value of event_selection_mechanism:" +
                         diagram.event_selection_mechanism)
 
+    if len(candidates) == 0:
+        raise EndOfRunException()
+        
     return random.choice(candidates)[0]
 
 
@@ -161,12 +171,12 @@ def run_diagram(diagram):
         while True:
             while step_to_next_state(diagram):
                 print_state()
-
+    
             e = select_event(diagram)
             print("*** Event:", e, "***")
-
+    
             wake_up_tokens(diagram, e)
-    except (ValueError, IndexError):
+    except EndOfRunException:
         pass
 
 

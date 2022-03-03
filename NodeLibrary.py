@@ -1,5 +1,6 @@
 import abc
 import copy
+import itertools
 from collections import Counter
 from itertools import permutations
 from typing import *
@@ -45,12 +46,14 @@ class NodeType(metaclass=abc.ABCMeta):
         elif n.tokens_display == 'count only':
             n.label += "\n" + len(n.tokens) + " tokens"
         else:
-            raise Exception(
-                "Illegal value for 'tokens_display': " + n.tokens_display)
+            raise Exception("Illegal value for 'tokens_display': " + n.tokens_display)
 
     def synchronization(self, tokens: Sequence[Dict], sync: Sequence[Dict], node: DiagramNode) -> (
-            Sequence[Dict], Sequence[Dict]):
+    Sequence[Dict], Sequence[Dict]):
         return (tokens, [])
+
+    def keep(self, tokens: Sequence[Dict], node: DiagramNode) -> Sequence[Dict]:
+        return []
 
 
 ######################################################################################
@@ -112,12 +115,12 @@ class SyncType(NodeType):
                     del t["BLOCK"]
                 n.label += "\n" + str(t)
                 n.height += 20
+            n.height = min(400, n.height)
         elif n.tokens_display == 'count only':
             if len(n.sync) > 0:
                 n.label += "\n %d tokens" % len(n.sync)
         else:
-            raise Exception(
-                "Illegal value for 'tokens_display': " + n.tokens_display)
+            raise Exception("Illegal value for 'tokens_display': " + n.tokens_display)
 
     def genF(self, l):
         return lambda e: e in l
@@ -131,12 +134,12 @@ class SyncType(NodeType):
                 t['REQ'] = eval(node.req, globals(), t)
 
             if node.wait != "[]":
-                w=eval(node.wait, globals(), t)
-                t['WAIT']=w if callable(w) else self.genF(w)
+                w = eval(node.wait, globals(), t)
+                t['WAIT'] = w if callable(w) else self.genF(w)
 
             if node.block != "[]":
-                b=eval(node.block, globals(), t)
-                t['BLOCK']=b if callable(b) else self.genF(b)
+                b = eval(node.block, globals(), t)
+                t['BLOCK'] = b if callable(b) else self.genF(b)
 
             if node.tokens_display != 'full with event':
                 if 'event' in t:
@@ -154,20 +157,20 @@ class LoopType(NodeType):
         return "loop"
 
     def node_manipulator(self, node: DiagramNode) -> None:
-        node.label='LOOP'
+        node.label = 'LOOP'
         node.label += "\ncount:" + node.count
         super().node_manipulator(node)
 
     def transformation(self, tokens: Sequence[Dict], node: DiagramNode, port: str) -> Sequence[Dict]:
-        nxtt=[]
+        nxtt = []
 
         for pt in tokens:
-            t=copy.deepcopy(pt)
+            t = copy.deepcopy(pt)
 
             try:
-                t["COUNT"]=t["COUNT"] - 1
+                t["COUNT"] = t["COUNT"] - 1
             except KeyError:
-                t["COUNT"]=int(node.count)
+                t["COUNT"] = int(node.count)
 
             if port == 'after':
                 if t["COUNT"] == 0:
@@ -196,22 +199,22 @@ class PermutationType(NodeType):
         return "permutation"
 
     def node_manipulator(self, node: DiagramNode) -> None:
-        node.label='PERMUTATION'
+        node.label = 'PERMUTATION'
         node.label += "\nkeys:" + node.keys
         super().node_manipulator(node)
 
     def transformation(self, tokens: Sequence[Dict], node: DiagramNode, port: str) -> Sequence[Dict]:
-        ret=[]
+        ret = []
 
         for t in tokens:
-            keys=eval(node.keys, globals(), t)
-            values=[t[k] for k in keys]
-            pvalues=permutations(values)
+            keys = eval(node.keys, globals(), t)
+            values = [t[k] for k in keys]
+            pvalues = permutations(values)
 
             for pval in pvalues:
-                t=copy.deepcopy(t)
+                t = copy.deepcopy(t)
                 for k in range(len(pval)):
-                    t[keys[k]]=pval[k]
+                    t[keys[k]] = pval[k]
                 ret.append(t)
 
         return ret
@@ -224,13 +227,13 @@ class JoinType(NodeType):
         return "join"
 
     def node_manipulator(self, node: DiagramNode) -> None:
-        node.label='JOIN\nCOUNT=%s' % node.count
-        node.log=[]
+        node.label = 'JOIN\nCOUNT=%s' % node.count
+        node.log = []
         super().node_manipulator(node)
 
     def state_visualization(self, n: DiagramNode) -> None:
-        n.label=n.org_label
-        n.height=50
+        n.label = n.org_label
+        n.height = 50
 
         n.label += "\n---------------------"
         for t in n.log:
@@ -238,34 +241,37 @@ class JoinType(NodeType):
             n.height += 20
 
     def get_groups(self, node: DiagramNode):
-        ret=[]
+        ret = []
 
-        join_by=eval(node.join_by)
-        def joinby(t): return [t[i] for i in join_by]
+        join_by = eval(node.join_by)
+
+        def joinby(t):
+            return [t[i] for i in join_by]
 
         node.log.sort(key=joinby)
 
-        join=None
+        join = None
         for t in node.log:
             if joinby(t) != join:
-                join=joinby(t)
-                group=[t]
+                join = joinby(t)
+                group = [t]
             else:
                 group.append(t)
-                if(len(group) >= eval(node.count)):
+                if (len(group) >= eval(node.count)):
                     ret.append(group)
 
         return ret
 
-    def synchronization(self, tokens: Sequence[Dict], sync: Sequence[Dict], node: DiagramNode) -> (Sequence[Dict], Sequence[Dict]):
-        if len(tokens) is not 0:
+    def synchronization(self, tokens: Sequence[Dict], sync: Sequence[Dict], node: DiagramNode) -> (
+    Sequence[Dict], Sequence[Dict]):
+        if len(tokens) != 0:
             node.log.extend(tokens)
 
         return (tokens, [])
 
-    #   TODO change this node to work like WaitForSetType - i.e., without using transformation. 
+    #   TODO change this node to work like WaitForSetType - i.e., without using transformation.
     def transformation(self, tokens: Sequence[Dict], node: DiagramNode, port: str) -> Sequence[Dict]:
-        groups=self.get_groups(node)
+        groups = self.get_groups(node)
         if len(groups) != 0:
             for g in groups:
                 for t in g:
@@ -286,17 +292,17 @@ class WaitForSetType(NodeType):
         return "waitforset"
 
     def node_manipulator(self, node: DiagramNode) -> None:
-        node.label="ANY " + node.threshold + " OF \n" + node.set
-        node.set=eval(node.set)
-        node.visited=[]
-        node.threshold=int(node.threshold)
+        node.label = "ANY " + node.threshold + " OF \n" + node.set
+        node.set = eval(node.set)
+        node.visited = []
+        node.threshold = int(node.threshold)
         # node.width = 400
-        node.height=100
+        node.height = 100
         super().node_manipulator(node)
 
     def state_visualization(self, n: DiagramNode) -> None:
-        n.label=n.org_label
-        n.height=80
+        n.label = n.org_label
+        n.height = 80
 
         n.label += "\n---------------------"
         n.label += "\nhistory=" + str(n.visited)
@@ -308,11 +314,99 @@ class WaitForSetType(NodeType):
         node.visited += [t for t in tokens if t in node.set and t not in node.visited]
 
         if len(node.visited) >= node.threshold:
-            tmp=node.visited
-            node.visited=[]
+            tmp = node.visited
+            node.visited = []
             return [{'subset': tmp}]
         else:
             return []
+
+
+######################################################################################
+class WaitAll(NodeType):
+
+    def type_string(self) -> str:
+        return "waitall"
+
+    def node_manipulator(self, node: DiagramNode) -> None:
+        node.label = "WAIT All  OF\n" + node.waitall
+        node.width = 400
+        node.height = 50
+        super().node_manipulator(node)
+
+    def state_visualization(self, n: DiagramNode) -> None:
+        n.label = n.org_label + "\n"
+        n.height = 50
+        if n.tokens_display == 'full' or n.tokens_display == 'full with event':
+            for t in n.sync:
+                t = copy.deepcopy(t)
+                del t["WAIT"]
+                n.label += f"{t}\n"
+                n.height += 20
+
+            n.label += "-----------\n"
+
+            for t in n.tokens:
+                # t = copy.deepcopy(t)
+                # del t["WAIT"]
+                n.label += f"{t}\n"
+                n.height += 20
+
+        elif n.tokens_display == 'count only':
+            if len(n.tokens) > 0:
+                n.label += "\n %d tokens" % len(n.tokens)
+        else:
+            raise Exception("Illegal value for 'tokens_display': " + n.tokens_display)
+
+    def genF(self, l):
+        return lambda e: True in [e in le for le in l]
+
+    def synchronization(self, tokens: Sequence[Dict], sync: Sequence[Dict], node: DiagramNode) -> Sequence[Dict]:
+        sync = copy.deepcopy(sync)
+        finished = []
+        for t in tokens:
+            t = copy.deepcopy(t)
+
+            if "WAITALL" not in t.keys():
+                tmp = eval(node.waitall, globals(), t)
+                if type(tmp) is dict:
+                    k =list(tmp.keys())
+                    t['WAITALL'] = [tmp[k] for k in k]
+                    t['WAITALLNAMES'] = k
+                else :
+                  t['WAITALL'] = tmp
+
+            if "event" in t.keys():
+                e = t["event"]
+                for waitlist in t["WAITALL"]:
+                    if e in waitlist:
+                        waitlist.remove(e)
+                del t["event"]
+
+            if [] in t['WAITALL']:
+                finished.append(t)
+            else:
+                l = copy.deepcopy(t['WAITALL'])
+                print(f'l={l}')
+                t['WAIT'] = self.genF(l)  # need to be the union
+                sync.append(t)
+
+        return (finished, sync)
+
+    def transformation(self, tokens: Sequence[Dict], node: DiagramNode, port: str) -> Sequence[Dict]:
+        nxt = []
+
+        for t in tokens:
+            if [] in t["WAITALL"]:
+                if "WAITALLNAMES" in t.keys():
+                    t[node.at] = t["WAITALLNAMES"][t["WAITALL"].index([])]
+                    del t["WAITALLNAMES"]
+                del t["WAITALL"]
+                nxt.append(copy.deepcopy(t))
+
+        return nxt
+
+    def keep(self, tokens: Sequence[Dict], node: DiagramNode) -> Sequence[Dict]:
+        return [t for t in tokens if [] not in t['WAITALL']]
 
 
 ######################################################################################
@@ -322,22 +416,22 @@ class LoggerType(NodeType):
         return "logger"
 
     def node_manipulator(self, node: DiagramNode) -> None:
-        node.label='LOG'
-        node.log=[]
+        node.label = 'LOG'
+        node.loog = []
         super().node_manipulator(node)
 
     def state_visualization(self, n: DiagramNode) -> None:
-        n.label=n.org_label
-        n.height=50
+        n.label = n.org_label
+        n.height = 100
 
         n.label += "\n---------------------"
-        for t in n.log:
+        for t in n.loog:
             n.label += "\n" + str(t)
             n.height += 10
 
     def synchronization(self, tokens: Sequence[Dict], sync: Sequence[Dict], node: DiagramNode) -> (
-            Sequence[Dict], Sequence[Dict]):
+    Sequence[Dict], Sequence[Dict]):
         if len(tokens) != 0:
-            node.log.append(tokens)
+            node.loog += tokens
 
         return (tokens, [])
