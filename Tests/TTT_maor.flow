@@ -45,24 +45,25 @@ Tie = 'game over in tie'
 
     st1 [type=start, initial="[{'path':path} for path in Path ]", width=400];
     wa1 [type=waitall, waitall="AllButOne(path ,O)", at= 'winMove']
-    rq1 [type=sync, req="[O(winMove)]", width=200]
+    rq1 [type=sync, req="[O(winMove)]", width=200,priority = 700]
 
     #Block the X player
 
     st3 -> wa3 -> rq3;
 
     st3 [type=start, initial="[{'path':path} for path in Path ]", width=400];
-    wa3 [type=waitall, waitall="AllButOne(path ,X)", at= 'block']
-    rq3 [type=sync, req="[O(block)]", width=200]
+    wa3 [type=waitall, waitall="AllButOne(path ,X)", at= 'toblock']
+    rq3 [type=sync, req="[O(toblock)]", width=200,priority = 600]
 
 
     #WinChecker
 
-    st5 -> wa5 -> rq5;
+    st5 -> wa5 -> rq5 -> sy5;
 
     st5 [type=start, initial="[{'path':path} for path in Path ]", width=400];
-    wa5 [type=waitall, waitall="{Owin:[O(i) for i in path] , Xwin:[X(i) for i in path] }", at= 'block']
-    rq5 [type=sync, req="[O(block)]", width=200]
+    wa5 [type=waitall, waitall="{Owin:[O(i) for i in path] , Xwin:[X(i) for i in path] }", at= 'winPlayer']
+    rq5 [type=sync, req="[winPlayer]", width=200,priority = 1000]
+    sy5 [type=sync, block="AllMove()+[Tie+Xwin+Owin]"]
 
     #must play in torns
 
@@ -74,35 +75,38 @@ Tie = 'game over in tie'
 
     #one player can chose each place + tie checker
 
-    st8 -> sy8_1 -> sy8_2;
+    st8 -> sy8_1 -> sy8_2 -> sy8_3;
 
     st8   [type=start, initial="[{'i':i} for i in range(1,10)]", width=400];
     sy8_1 [type=sync, block="[Tie]", wait="[X(i),O(i)]"]
     sy8_2 [type=sync, block="[X(i),O(i)]",req="[Tie]"]
-
+    sy8_3 [type=sync, block="AllMove()+[Tie+Xwin+Owin]"]
 
     #make player O turns
 
+        #mid
     st_t1 ->sync1 ->sync1;
 
-    st_t1 [type=start, initial="[{'place':[5]},{'place':[1,3,7,9]},{'place':[8,4,6,2]}]", width=400];
-    sync1 [type=sync, req="[O(i) for i in place]"]
+    st_t1 [type=start, initial="[{'place':[5]}]", width=400];
+    sync1 [type=sync, req="[O(i) for i in place]",priority = 100]
 
-#   st_t2 ->sync2 ->sync2;
-#
-#   st_t2 [type=start, initial="[{'place':[1]}]", width=400];
-#   sync2 [type=sync, req="[O(i)]"]
-#
-#   st_t3 ->sync3 ->sync3;
-#
-#   st_t3 [type=start, initial="[{'i':1}]", width=400];
-#   sync3 [type=sync, req="[O(i)]"]
+        #corners
+    st_t2 ->sync2 ->sync2;
+
+    st_t2 [type=start, initial="[{'place':[1,3,7,9]}]", width=400];
+    sync2 [type=sync, req="[O(i) for i in place]",priority =50]
+
+        #edge
+    st_t3 ->sync3 ->sync3;
+
+    st_t3 [type=start, initial="[{'place':[8,4,6,2]}]", width=400];
+    sync3 [type=sync, req="[O(i) for i in place]",priority = 10]
 
 
-#    st2 -> rqX1  ;
-#
-#    st2 [type=start, initial="[{'i':i }for i in range(1,4)]", width=400];
-#    rqX1[type = sync , req="[X(i)]"]
+    st2 -> rqX1  ;
+
+    st2 [type=start, initial="[{'i':i }for i in range(1,10)]", width=400];
+    rqX1[type = sync , req="[X(i)]"]
 
 
     # For debugging
