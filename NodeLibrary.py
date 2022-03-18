@@ -328,7 +328,7 @@ class WaitAll(NodeType):
         return "waitall"
 
     def node_manipulator(self, node: DiagramNode) -> None:
-        node.label = "WAIT All  OF\n" + node.waitall
+        node.label = "WAIT All  OF\n" + node.waitall + ("\n at " + node.at if node.at is not None else "")
         node.width = 400
         node.height = 50
         super().node_manipulator(node)

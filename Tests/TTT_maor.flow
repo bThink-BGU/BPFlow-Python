@@ -24,7 +24,7 @@ All= lambda A:[A(i) for i in range(1,10)]
 global AllMove
 AllMove=lambda : All(X) + All(O)
 
-global AllButOne
+global AllButOne  # but N
 AllButOne = lambda x ,f : {i:list(set([f(j) if j!=i else None for j in x])-{None}) for i in x}
 
 global Xwin
@@ -38,6 +38,8 @@ Tie = 'game over in tie'
 
 "
 
+    event_selection_mechanism = "priority"
+######################################################################################
 
     #complite O line
 
@@ -45,7 +47,8 @@ Tie = 'game over in tie'
 
     st1 [type=start, initial="[{'path':path} for path in Path ]", width=400];
     wa1 [type=waitall, waitall="AllButOne(path ,O)", at= 'winMove']
-    rq1 [type=sync, req="[O(winMove)]", width=200,priority = 700]
+    rq1 [type=sync, req="[O(winMove)]", width=200,priority = 8]
+######################################################################################
 
     #Block the X player
 
@@ -53,8 +56,9 @@ Tie = 'game over in tie'
 
     st3 [type=start, initial="[{'path':path} for path in Path ]", width=400];
     wa3 [type=waitall, waitall="AllButOne(path ,X)", at= 'toblock']
-    rq3 [type=sync, req="[O(toblock)]", width=200,priority = 600]
+    rq3 [type=sync, req="[O(toblock)]", width=200,priority = 7]
 
+######################################################################################
 
     #WinChecker
 
@@ -62,8 +66,9 @@ Tie = 'game over in tie'
 
     st5 [type=start, initial="[{'path':path} for path in Path ]", width=400];
     wa5 [type=waitall, waitall="{Owin:[O(i) for i in path] , Xwin:[X(i) for i in path] }", at= 'winPlayer']
-    rq5 [type=sync, req="[winPlayer]", width=200,priority = 1000]
-    sy5 [type=sync, block="AllMove()+[Tie+Xwin+Owin]"]
+    rq5 [type=sync, req="[winPlayer]",block= "AllMove()+[Tie]", width=200]
+    sy5 [type=sync, block="AllMove()+[Tie,Xwin,Owin]"]
+######################################################################################
 
     #must play in torns
 
@@ -72,6 +77,7 @@ Tie = 'game over in tie'
     st7   [type=start, initial="[{}]", width=400];
     sy7_1 [type=sync, block="All(O)", wait="All(X)"]
     sy7_2 [type=sync, block="All(X)", wait="All(O)"]
+######################################################################################
 
     #one player can chose each place + tie checker
 
@@ -83,32 +89,37 @@ Tie = 'game over in tie'
     sy8_3 [type=sync, block="AllMove()+[Tie+Xwin+Owin]"]
 
     #make player O turns
+######################################################################################
 
         #mid
-    st_t1 ->sync1 ->sync1;
+    st_t1 ->sync1;
 
     st_t1 [type=start, initial="[{'place':[5]}]", width=400];
-    sync1 [type=sync, req="[O(i) for i in place]",priority = 100]
+    sync1 [type=sync, req="[O(i) for i in place]",priority =3]
+######################################################################################
 
         #corners
-    st_t2 ->sync2 ->sync2;
+    st_t2 ->sync2 ;
 
-    st_t2 [type=start, initial="[{'place':[1,3,7,9]}]", width=400];
-    sync2 [type=sync, req="[O(i) for i in place]",priority =50]
+    st_t2 [type=start, initial="[{'place':1},{'place':3},{'place':7},{'place':9}]", width=400];
+    sync2 [type=sync, req="[O(place)]",priority =2]
+######################################################################################
 
         #edge
-    st_t3 ->sync3 ->sync3;
+    st_t3 ->sync3;
 
-    st_t3 [type=start, initial="[{'place':[8,4,6,2]}]", width=400];
-    sync3 [type=sync, req="[O(i) for i in place]",priority = 10]
+    st_t3 [type=start, initial="[{'place':8},{'place':4},{'place':6},{'place':2}]", width=400];
+    sync3 [type=sync, req="[O(place)]",priority = 1]
 
+######################################################################################
 
+   #x moves
     st2 -> rqX1  ;
 
     st2 [type=start, initial="[{'i':i }for i in range(1,10)]", width=400];
     rqX1[type = sync , req="[X(i)]"]
 
-
+######################################################################################
     # For debugging
     class hidden [color = none, style = none, textcolor = white];
     stt -> listener -> logger -> listener [style = "none"];
