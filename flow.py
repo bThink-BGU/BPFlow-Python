@@ -131,8 +131,9 @@ def select_event(diagram):
     if diagram.event_selection_mechanism == 'random':
         pass
     elif diagram.event_selection_mechanism == 'priority':
-        p = max(candidates, key=lambda e: int(e[1]))[1]
-        candidates = [e for e in candidates if e[1] == p]
+        if len(candidates)>0:
+            p = max(candidates, key=lambda e: int(e[1]))[1]
+            candidates = [e for e in candidates if e[1] == p]
     else:
         raise Exception("Illegal value of event_selection_mechanism:" +
                         diagram.event_selection_mechanism)
