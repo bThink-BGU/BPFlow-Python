@@ -1,0 +1,22 @@
+blockdiag {
+    st -> req1 -> req2;
+    st -> wt1;
+    wt2 -> req3;
+
+    st [type=start];
+    req1 [type=sync, req="['1']"];
+    req2 [type=sync, req="['2']"];
+    req3 [type=sync, req="['3']"];
+
+    wt1 [type=sync, wait="['1']"];
+    wt2 [type=sync, wait="['2']"];
+
+    group {
+        req1;
+        req2;
+        wt1;
+        wt2;
+    }
+
+
+}

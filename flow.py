@@ -43,7 +43,9 @@ def traverse_nodes(n):
     if not hasattr(n, 'nodes'):
         yield n
     else:
+        # TODO: Group
         for nn in n.nodes:
+            # Add nn.group = n ?
             yield from traverse_nodes(nn)
 
 
