@@ -77,6 +77,9 @@ class StartType(NodeType):
 ######################################################################################
 class SyncType(NodeType):
 
+    def __init__(self):
+        self.stop = False
+
     def type_string(self) -> str:
         return "sync"
 
@@ -435,3 +438,6 @@ class LoggerType(NodeType):
             node.loog += tokens
 
         return (tokens, [])
+
+
+######################################################################################
