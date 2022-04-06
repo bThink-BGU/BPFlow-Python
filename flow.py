@@ -38,20 +38,50 @@ builder.Diagram.event_selection_mechanism = 'random'
 node_types = (StartType(), SyncType(), LoopType(), PassType(), PermutationType(),
               JoinType(), WaitForSetType(), LoggerType(), WaitAll())
 
+global _id
+_id = 0
+
 
 def traverse_nodes(n):
     if not hasattr(n, 'nodes'):
         yield n
     else:
-        # TODO: Group
         for nn in n.nodes:
             # Add nn.group = n ?
             yield from traverse_nodes(nn)
 
 
+def traverse_nodes_group(n):
+    if not hasattr(n, 'nodes'):
+        pass
+    else:
+        for nn in n.nodes:
+            # Add nn.group = n ?
+            yield from traverse_nodes_group(nn)
+            if type(nn) is NodeGroup:
+                yield nn
+
+
+def get_group_nodes(g):
+    n = [n for n in g.nodes]
+    for e in g.edges:
+        if e.node2 in n:
+            n.remove(e.node2)
+            yield e.node2
+    gr = g
+    while gr is not diagram and len(nodes) != 0:
+        gr = g.group
+        for e in gr.edges:
+            if e.node2 in n:
+                n.remove(e.node2)
+                yield e.node2
+
+
 def setup_diagram(diagram):
     global nodes
+    global nodes_group
     nodes = [n for n in traverse_nodes(diagram)]
+    nodes_group = [n for n in traverse_nodes_group(diagram)]
 
     for n in nodes:
         n.pred = []
@@ -60,9 +90,19 @@ def setup_diagram(diagram):
             if nt.type_string() == n.type:
                 n.node_type = nt
                 nt.node_manipulator(n)
+                break
 
         if n.node_type is None:
             raise AttributeError("Unknown type '" + n.type + "'")
+    for g in nodes_group:
+        g.stop_group = False
+        g.conn_nodes = [n for n in get_group_nodes(g)]
+        g.groupStop = set(g.nodes) - set(g.conn_nodes)
+        for cn in g.conn_nodes:
+            if not hasattr(cn, "stop_nodes"):
+                cn.stop_nodes = []
+            for sn in g.groupStop:
+                cn.stop_nodes.append(sn)
 
     build_predessessors_field(diagram)
     print_diagram(diagram, sys.argv[1])
@@ -104,10 +144,36 @@ def print_state(terminal_output=True):
 
 
 def step_to_next_state(diagram):
+    global _id
     tmp, changed = {}, False
     for n in nodes:
-        tmp[n] = [t for pn, p in n.pred for t in
-                  pn.node_type.transformation(pn.tokens, pn, p)] + n.node_type.keep(n.tokens, n)
+        if n not in tmp.keys():
+            tmp[n] = []
+            for pn, p in n.pred:
+                trans = [t for t in pn.node_type.transformation(pn.tokens, pn, p)]
+                if pn.group != n.group:
+                    if hasattr(n, "stop_nodes"):
+                        for sn in n.stop_nodes:
+                            if sn not in tmp.keys():
+                                tmp[sn] = []
+                            for t in trans:
+                                if "ID" not in t.keys():
+                                    t["ID"] = _id
+                                    _id += 1
+                            tmp[sn].extend(trans)
+                tmp[n].extend(trans)
+
+            tmp[n].extend(n.node_type.keep(n.tokens, n))
+
+    # for g in nodes_group:
+    #     for n in g.conn_nodes:
+    #         for t in n.tokens + n.sync:
+    #             for sn in g.groupStop:
+    #                 if t["ID"] not in [tt["ID"] for tt in (sn.tokens + sn.sync)]:
+    #                     if t in n.tokens:
+    #                         n.tokens.remove(t)
+    #                     elif t in n.sync:
+    #                         n.sync.remove(t)
 
     for n in nodes:
         tmp[n], n.sync = n.node_type.synchronization(tmp[n], n.sync, n)
@@ -115,6 +181,15 @@ def step_to_next_state(diagram):
             changed = True
         n.tokens = tmp[n]
 
+    for g in nodes_group:
+        for n in g.conn_nodes:
+            for t in n.tokens + n.sync:
+                for sn in g.groupStop:
+                    if t["ID"] not in [tt["ID"] for tt in (sn.tokens + sn.sync)]:
+                        if t in n.tokens:
+                            n.tokens.remove(t)
+                        elif t in n.sync:
+                            n.sync.remove(t)
     return changed
 
 
@@ -133,7 +208,7 @@ def select_event(diagram):
     if diagram.event_selection_mechanism == 'random':
         pass
     elif diagram.event_selection_mechanism == 'priority':
-        if len(candidates)>0:
+        if len(candidates) > 0:
             p = max(candidates, key=lambda e: int(e[1]))[1]
             candidates = [e for e in candidates if e[1] == p]
     else:
@@ -142,7 +217,7 @@ def select_event(diagram):
 
     if len(candidates) == 0:
         raise EndOfRunException()
-        
+
     return random.choice(candidates)[0]
 
 
@@ -174,10 +249,10 @@ def run_diagram(diagram):
         while True:
             while step_to_next_state(diagram):
                 print_state()
-    
+
             e = select_event(diagram)
             print("*** Event:", e, "***")
-    
+
             wake_up_tokens(diagram, e)
     except EndOfRunException:
         pass

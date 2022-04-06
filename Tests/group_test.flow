@@ -1,7 +1,7 @@
 blockdiag {
     st -> req1 -> req2;
-    st -> wt1;
-    wt2 -> req3;
+    st -> wt2;
+    wt1 -> req3;
 
     st [type=start];
     req1 [type=sync, req="['1']"];
@@ -14,8 +14,8 @@ blockdiag {
     group {
         req1;
         req2;
-        wt1;
         wt2;
+        wt1;
     }
 
 
