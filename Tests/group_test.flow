@@ -1,7 +1,7 @@
 blockdiag {
     st -> req1 -> req2;
-    st -> wt2;
-    wt1 -> req3;
+    st -> wt1 -> req3;
+    bl3;
 
     st [type=start];
     req1 [type=sync, req="['1']"];
@@ -9,14 +9,29 @@ blockdiag {
     req3 [type=sync, req="['3']"];
 
     wt1 [type=sync, wait="['1']"];
-    wt2 [type=sync, wait="['2']"];
+    bl3 [type=sync, block="['3']"];
 
     group {
         req1;
         req2;
-        wt2;
         wt1;
+        bl3
     }
+
+
+    ######################################################################################
+
+    # For debugging
+    class hidden [color = none, style = none, textcolor = white];
+    stt -> listener -> logger -> listener [style = "none"];
+
+    listener [type=sync,
+              wait="lambda e: True",
+              class = "hidden", autoformat='false'];
+
+    logger [type=logger, label="Events log", autoformat='false', width=200]
+    stt [type=start, class = "hidden", autoformat='false'];
+
 
 
 }

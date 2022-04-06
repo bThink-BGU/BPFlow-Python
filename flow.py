@@ -161,19 +161,12 @@ def step_to_next_state(diagram):
                                     t["ID"] = _id
                                     _id += 1
                             tmp[sn].extend(trans)
+
                 tmp[n].extend(trans)
 
             tmp[n].extend(n.node_type.keep(n.tokens, n))
 
-    # for g in nodes_group:
-    #     for n in g.conn_nodes:
-    #         for t in n.tokens + n.sync:
-    #             for sn in g.groupStop:
-    #                 if t["ID"] not in [tt["ID"] for tt in (sn.tokens + sn.sync)]:
-    #                     if t in n.tokens:
-    #                         n.tokens.remove(t)
-    #                     elif t in n.sync:
-    #                         n.sync.remove(t)
+
 
     for n in nodes:
         tmp[n], n.sync = n.node_type.synchronization(tmp[n], n.sync, n)
@@ -190,6 +183,17 @@ def step_to_next_state(diagram):
                             n.tokens.remove(t)
                         elif t in n.sync:
                             n.sync.remove(t)
+    for g in nodes_group:
+        ids =[]
+        for n in g.conn_nodes:
+            ids.extend([t["ID"] for t in (n.tokens + n.sync)])
+        for n in g.groupStop:
+            for t in n.tokens +n.sync:
+                if t["ID"] not in ids:
+                    if t in n.tokens:
+                        n.tokens.remove(t)
+                    elif t in n.sync:
+                        n.sync.remove(t)
     return changed
 
 
