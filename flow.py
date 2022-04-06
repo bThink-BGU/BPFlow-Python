@@ -152,12 +152,12 @@ def step_to_next_state(diagram):
             for pn, p in n.pred:
                 trans = [t for t in pn.node_type.transformation(pn.tokens, pn, p)]
                 if pn.group != n.group:
-                    if hasattr(n, "stop_nodes"):
+                    if hasattr(n, "stop_nodes"):  # for geting the token to the stop node (catch node)
                         for sn in n.stop_nodes:
                             if sn not in tmp.keys():
                                 tmp[sn] = []
                             for t in trans:
-                                if "ID" not in t.keys():
+                                if "ID" not in t.keys():  # for indicating the duplicate token in the stop node
                                     t["ID"] = _id
                                     _id += 1
                             tmp[sn].extend(trans)
@@ -165,8 +165,6 @@ def step_to_next_state(diagram):
                 tmp[n].extend(trans)
 
             tmp[n].extend(n.node_type.keep(n.tokens, n))
-
-
 
     for n in nodes:
         tmp[n], n.sync = n.node_type.synchronization(tmp[n], n.sync, n)
@@ -184,11 +182,11 @@ def step_to_next_state(diagram):
                         elif t in n.sync:
                             n.sync.remove(t)
     for g in nodes_group:
-        ids =[]
+        ids = []
         for n in g.conn_nodes:
             ids.extend([t["ID"] for t in (n.tokens + n.sync)])
         for n in g.groupStop:
-            for t in n.tokens +n.sync:
+            for t in n.tokens + n.sync:
                 if t["ID"] not in ids:
                     if t in n.tokens:
                         n.tokens.remove(t)

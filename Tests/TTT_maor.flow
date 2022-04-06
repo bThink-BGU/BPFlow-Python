@@ -36,6 +36,9 @@ Owin = 'player O win'
 global Tie
 Tie = 'game over in tie'
 
+global Fork
+Fork = [([1,4,2],[7,3]) ,([1,4,5],[7,6]),([1,7,9],[4,8]),([1,7,9],[4,8])]
+
 "
 
     event_selection_mechanism = "priority"
@@ -63,7 +66,7 @@ Tie = 'game over in tie'
     st4 -> wa4 -> rq4;
     wt4;
 
-    st4 [type=start, initial="[{'fork' : fork , 'defend' : defend} for (fork,defend) in [([4,1,2],[7,3])] ]", width=400];
+    st4 [type=start, initial="[{'fork' : fork , 'defend' : defend} for (fork,defend) in Fork]", width=400];
     wa4 [type=waitall, waitall="AllButOne(fork ,O)", at= 'toFork']
     rq4 [type=sync, req="[O(toFork)]", width=200,priority = 6]
     wt4 [type=sync, wait="[X(d) for d in defend]", width=200]
