@@ -10,12 +10,12 @@ O=lambda i : 'O'+str(i)
 global perm3
 perm3 = lambda a : [[a[0],a[1],a[2]],[a[0],a[2],a[1]],[a[1],a[0],a[2]],[a[2],a[0],a[1]], [a[1],a[2],a[0]],[a[2],a[1],a[0]]]
 
-global Path
-Path = [['1','2','3'],['4','5','6'],['7','8','9'],['1','4','7'],['2','5','8'],['3','6','9'],['1','5','9'],['3','5','7']]
+global Line
+Line = [['1','2','3'],['4','5','6'],['7','8','9'],['1','4','7'],['2','5','8'],['3','6','9'],['1','5','9'],['3','5','7']]
 
 global Lines
 Lines =[]
-for p in Path:
+for p in Line:
     Lines.extend(perm3(p))
 
 global All
@@ -48,8 +48,8 @@ Fork = [([1,4,2],[7,3]) ,([1,4,5],[7,6]),([1,7,9],[4,8]),([1,7,9],[4,8])]
 
     st1 -> wa1 -> rq1;
 
-    st1 [type=start, initial="[{'path':path} for path in Path ]", width=400];
-    wa1 [type=waitall, waitall="AllButOne(path ,O)", at= 'winMove']
+    st1 [type=start, initial="[{'line':line} for line in Line ]", width=400];
+    wa1 [type=waitall, waitall="AllButOne(line ,O)", at= 'winMove']
     rq1 [type=sync, req="[O(winMove)]", width=200,priority = 8]
 ######################################################################################
 
@@ -57,8 +57,8 @@ Fork = [([1,4,2],[7,3]) ,([1,4,5],[7,6]),([1,7,9],[4,8]),([1,7,9],[4,8])]
 
     st3 -> wa3 -> rq3;
 
-    st3 [type=start, initial="[{'path':path} for path in Path ]", width=400];
-    wa3 [type=waitall, waitall="AllButOne(path ,X)", at= 'toblock']
+    st3 [type=start, initial="[{'line':line} for line in Line ]", width=400];
+    wa3 [type=waitall, waitall="AllButOne(line ,X)", at= 'toblock']
     rq3 [type=sync, req="[O(toblock)]", width=200,priority = 7]
 
 ######################################################################################
@@ -82,8 +82,8 @@ Fork = [([1,4,2],[7,3]) ,([1,4,5],[7,6]),([1,7,9],[4,8]),([1,7,9],[4,8])]
 
     st5 -> wa5 -> rq5 -> sy5;
 
-    st5 [type=start, initial="[{'path':path} for path in Path ]", width=400];
-    wa5 [type=waitall, waitall="{Owin:[O(i) for i in path] , Xwin:[X(i) for i in path] }", at= 'winPlayer']
+    st5 [type=start, initial="[{'line':line} for line in Line ]", width=400];
+    wa5 [type=waitall, waitall="{Owin:[O(i) for i in line] , Xwin:[X(i) for i in line] }", at= 'winPlayer']
     rq5 [type=sync, req="[winPlayer]",block= "AllMove()+[Tie]", width=200]
     sy5 [type=sync, block="AllMove()+[Tie,Xwin,Owin]"]
 ######################################################################################

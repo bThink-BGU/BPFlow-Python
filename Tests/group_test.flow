@@ -1,5 +1,5 @@
 blockdiag {
-    st -> req1 -> req2;
+    st -> req1 -> req2, req3;
     st -> wt1 -> req3;
     bl3;
 
