@@ -1,0 +1,191 @@
+from urllib.request import urlopen, Request
+from urllib.parse import urlencode, quote
+import math
+
+FAIL = "{\"errorCode\" : 8, \"mesage\" : \"invalid mc.py\"}"
+
+player = 'geraw'
+
+class MC:
+    def __init__(self):
+        # put True here to see some logging
+        self.debug = True
+        # this is here so we can verify the directions
+        self.directions = ["forward", "left", "right", "back", "up", "down"]
+
+    def _get(self, path):
+        if self.debug:
+            print("_get called with", path)
+        # Code Connection listens on port 8080 localhost
+        u = urlopen("http://localhost:8080/" + path)
+        data = u.read()
+        u.close()
+        return data
+
+    # commands for agent
+    def move(self, direction):
+        if direction not in self.directions:
+            return FAIL
+        return self._get("move?direction=" + direction)
+
+    def turn(self, direction):
+        if direction not in self.directions:
+            return FAIL
+        return self._get("turn?direction=" + direction)
+
+    def place(self, slotnum, direction):
+        if direction not in self.directions:
+            return FAIL
+        if slotnum < 1 or slotnum > 27:
+            return FAIL
+        return self._get("place?slotNum=" + str(slotnum) + "&direction=" + direction)
+
+
+    def give(self, item, itemAmount, slot):
+        return self._get(f"give?player={player}&itemName={item}&{itemAmount=}&data={slot}")
+
+    def till(self, direction):
+        if direction not in self.directions:
+            return FAIL
+        return self._get("till?direction=" + direction)
+
+    def attack(self, direction):
+        if direction not in self.directions:
+            return FAIL
+        return self._get("attack?direction=" + direction)
+
+    def destroy(self, direction):
+        if direction not in self.directions:
+            return FAIL
+        return self._get("destroy?direction=" + direction)
+
+    def collect(self, item):
+        return self._get("collect?item=" + str(item))
+
+    def drop(self, slotnum, quantity, direction):
+        if slotnum < 1 or slotnum > 27:
+            return FAIL
+        if quantity < 1 or quantity > 64:
+            return FAIL
+        return self._get("drop?slotNum=" + str(slotnum) + "&quantity=" + str(quantity) + "&direction=" + direction)
+
+    def dropall(self, direction):
+        if direction not in self.directions:
+            return FAIL
+        return self._get("dropall?direction=" + direction)
+
+    def detect(self, direction):
+        if direction not in self.directions:
+            return FAIL
+        return self._get("detect?direction=" + direction)
+
+    def inspect(self, direction):
+        if direction not in self.directions:
+            return FAIL
+        return self._get("inspect?direction=" + direction)
+
+    def inspectdata(self, direction):
+        if direction not in self.directions:
+            return FAIL
+        return self._get("inspectdata?direction=" + direction)
+
+    def detectredstone(self, direction):
+        if direction not in self.directions:
+            return FAIL
+        return self._get("detectredstone?direction=" + direction)
+
+    def getitemdetail(self, slotnum):
+        return self._get("getitemdetail?slotNum=" + str(slotnum))
+
+    def getitemspace(self, slotnum):
+        return self._get("getitemspace?slotNum=" + str(slotnum))
+
+    def getitemcount(self, slotnum):
+        return self._get("getitemcount?slotNum=" + str(slotnum))
+
+    def transfer(self, src_slotnum, quantity, dst_slotnum):
+        return self._get(
+            "transfer?srcSlotNum=" + str(src_slotnum) + "&quantity=" + str(quantity) + "&dstSlotNum=" + str(
+                dst_slotnum))
+
+    def teleport(self):
+        return self._get("tptoplayer")
+
+    def create_block_pos(self, x, y, z, is_relative):
+        if is_relative:
+            prefix = "~"
+        else:
+            prefix = ""
+        res = "{0}{1}%20{0}{2}%20{0}{3}".format(prefix, x, y, z)
+        return res
+
+    # world commands
+    def clone(self, blockpos_begin, blockpos_end, blockpos_dest):
+        pass
+
+    def fill(self, fromX, fromY, fromZ, fromRel, toX, toY, toZ, toRel, tilename):
+        x = self.create_block_pos(fromX, fromY, fromZ, True)
+        y = self.create_block_pos(toX, toY, toZ, True)
+        cmd = "fill?from=" + x + "&to=" + y + "&tileName=" + tilename
+        return self._get(cmd)
+
+    def setblock(self, x, y, z, rel, tilename, tiledata=None):
+        b = self.create_block_pos(x, y, z, rel)
+        if tiledata is None:
+            cmd = "setblock?position=" + b + "&tileName=" + tilename
+        else:
+            cmd = "setblock?position=" + b + "&tileName=" + tilename + "&tileData=" + str(tiledata)
+        # print(cmd)
+        return self._get(cmd)
+
+###############################################################################################
+
+agent = MC()
+
+# move agent to player first!
+agent.teleport()
+
+# Give it 54 gold bricks
+agent.give("gold_block", 64, 1)
+
+# Build a golden staircase
+for count in range(5):
+    agent.place(1, "forward")
+    agent.move("up")
+    agent.move("forward")
+
+# import time
+# time.sleep(5)
+# print(mc.inspect("right"))
+# print(mc.inspectdata("left"))
+#
+#
+# print(mc.turn("right"))
+# print(mc.place(1,"forward"))
+# print(mc.drop(1,1,"left"))
+# print(mc.dropall("up"))
+# print(mc.getitemdetail(1))
+# print(mc.getitemspace(2))
+# print(mc.getitemcount(3))
+# print(mc.fill(0,0,0,True,10,0,0,True,"dirt"))
+# for i in range(16):
+#    for i in range(10):
+#        mc.setblock(0,0,math.sin(1+i),False,"wool",i)
+# print("hi")
+# for i in range(10):
+#    mc.turn("right")
+#    mc.turn("left")
+
+# got this from one of my other repos
+# it is super slow and you cannot move during it
+# since all of the positions are relative!
+# def sphere(mc):
+#     radius = 6
+#     px = py = pz = 0
+#     for x in range(radius * -1, radius):
+#         for y in range(radius * -1, radius):
+#             for z in range(radius * -1, radius):
+#                 if x ** 2 + y ** 2 + z ** 2 < radius ** 2:
+#                     mc.setblock(px + x, py + y + radius, pz - z - 10, True, "stone")
+
+#sphere(mc)
