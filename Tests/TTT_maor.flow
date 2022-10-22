@@ -27,8 +27,8 @@ AllMove=lambda : All(X) + All(O)
 "
     st3 -> rq3;
 
-    st3 [type=start, initial="[{'path':path} for path in Path ]", width=400];
-    rq3 [type=sync, req="['Player X wins']", block="AllMove()"]
+    st3 [type=startBP, initial="[{'path':path} for path in Path ]", width=400];
+    rq3 [type=syncBP, req="['Player X wins']", block="AllMove()"]
 
 
 
@@ -36,20 +36,11 @@ AllMove=lambda : All(X) + All(O)
 
     st2 -> rqX1  ;
 
-    st2 [type=start, initial="[{'i':i }for i in range(1,4)]", width=400];
-    rqX1[type = sync , req="[X(i)]"]
+    st2 [type=startBP, initial="[{'i':i }for i in range(1,4)]", width=400];
+    rqX1[type = syncBP , req="[X(i)]"]
 
 
-    # For debugging
-    class hidden [color = none, style = none, textcolor = white];
-    stt -> listener -> logger -> listener [style = "none"];
 
-    listener [type=sync,
-              wait="lambda e: True",
-              class = "hidden", autoformat='false'];
-
-    logger [type=logger, label="Events log", autoformat='false']
-    stt [type=start, class = "hidden", autoformat='false'];
 
 
 

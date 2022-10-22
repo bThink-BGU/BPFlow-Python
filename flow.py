@@ -4,6 +4,7 @@ import random
 import sys
 import os
 import glob
+from bppy import *
 
 from NodeLibrary import *
 
@@ -28,6 +29,8 @@ builder.DiagramNode.priority = 0
 builder.DiagramNode.join_by = []
 builder.DiagramNode.join = None
 
+builder.DiagramNode.next = None
+
 builder.DiagramNode.waitall = "[]"
 
 
@@ -36,7 +39,7 @@ builder.Diagram.initialization_code = ""
 builder.Diagram.event_selection_mechanism = 'random'
 
 node_types = (StartType(), SyncType(), LoopType(), PassType(), PermutationType(),
-              JoinType(), WaitForSetType(), LoggerType(), WaitAll())
+              JoinType(), WaitForSetType(), LoggerType(), WaitAll(), StartNodeBP(),SyncNodeBP())
 
 
 def traverse_nodes(n):
@@ -70,6 +73,7 @@ def setup_diagram(diagram):
 def build_predessessors_field(diagram):
     for e in diagram.traverse_edges():
         e.node2.pred.append((e.node1, e.label))
+        e.node1.next = e.node2
 
 
 def print_diagram(diagram, file_name):
@@ -172,6 +176,24 @@ def run_diagram(diagram):
     except (ValueError, IndexError):
         pass
 
+@b_thread
+def token_bp(token, node :NodeTypeBP , diagram):
+    n = node
+    while True:
+        if n is None:
+            break
+        n = n.sync(token)
+        print_state()
+
+def run_diagram_bp(diagram):
+    setup_diagram(diagram)
+    print_state()
+    b_program = BProgram(bthreads=[token_bp(t,n,diagram) for n in diagram.nodes for t in n.tokens],
+                         event_selection_strategy=SimpleEventSelectionStrategy(),
+                         listener=PrintBProgramRunnerListener())
+    b_program.run()
+
+
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:
@@ -183,6 +205,6 @@ if __name__ == "__main__":
 
         if diagram.run is None:
             run_init(diagram)
-            run_diagram(diagram)
+            run_diagram_bp(diagram)
         else:
             exec(diagram.run)

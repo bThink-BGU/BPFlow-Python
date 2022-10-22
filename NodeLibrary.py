@@ -1,6 +1,7 @@
 import abc
 import copy
 import itertools
+from bppy import *
 from collections import Counter
 from itertools import permutations
 from typing import *
@@ -28,11 +29,10 @@ class NodeType(metaclass=abc.ABCMeta):
         return [copy.deepcopy(t) for t in tokens]
 
     def state_visualization(self, n: DiagramNode) -> None:
-        n.label = n.org_label
-        n.height = n.org_height
+        n.label = ""
 
-        if n.org_label != "":
-            n.label = n.org_label + "\n-------------"
+
+        n.label =  "\n-------------"
 
         if n.height is None:
             n.height = 80
@@ -426,3 +426,92 @@ class LoggerType(NodeType):
             node.loog += tokens
 
         return (tokens, [])
+
+
+
+
+
+################
+###############
+#################
+
+
+class NodeTypeBP(NodeType):
+    def __init__(self):
+        self.node = None
+
+    def node_manipulator(self, n: DiagramNode) -> None:
+        self.node = n
+
+    def sync(self,token,event = None )-> NodeType or None:
+        self.node.tokens.remove(token)
+        self.node.next.tokens.append(deepcopy(token))
+        return self.node.next
+
+class StartNodeBP(NodeTypeBP):
+    def node_manipulator(self, node: DiagramNode) -> None:
+        node.shape = "beginpoint"
+        node.label = ""
+        if node.initial is None:
+            node.tokens = [{}]
+        else:
+            node.tokens = eval(node.initial)
+        super().node_manipulator(node)
+
+    def type_string(self) -> str:
+        return "startBP"
+
+
+
+
+
+class SyncNodeBP(NodeTypeBP):
+    def node_manipulator(self, node: DiagramNode) -> None:
+        node.label = 'SYNC'
+        h = 30
+        if node.req != "[]":
+            node.label += "\nreq:" + node.req
+            h += 10
+        if node.wait != "[]":
+            node.label += "\nwait:" + node.wait
+            h += 10
+        if node.block != "[]":
+            node.label += "\nblock:" + node.block
+            h += 10
+        if node.height is None:
+            node.height = h
+        node.block_text = node.block
+        node.wait_text = node.block
+        if node.autoformat != 'false':
+            node.color = '#fcfbe3'
+        super().node_manipulator(node)
+
+    def type_string(self) -> str:
+        return "syncBP"
+    def sync(self,token,event = None ) ->NodeTypeBP:
+        node = self.node
+        t = copy.deepcopy(token)
+        toYeild = {}
+        if node.req != "[]":
+            toYeild[request] = [BEvent(s) for s in eval(node.req, globals(), t)]
+
+        if node.wait != "[]":
+            w = eval(node.wait, globals(), t)
+            w = w if callable(w) else self.genF(w)
+            toYeild[waitFor] =lambda e : w(e.name)
+
+        if node.block != "[]":
+            b = eval(node.block, globals(), t)
+            b = b if callable(b) else self.genF(b)
+            toYeild[block] = lambda e : b(e.name)
+
+        if node.tokens_display != 'full with event':
+            if 'event' in t:
+                del t['event']
+
+        yield toYeild
+
+        super(SyncNodeBP, self).sync(token,event)
+
+
+
