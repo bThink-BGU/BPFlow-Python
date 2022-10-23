@@ -27,7 +27,7 @@ AllMove=lambda : All(X) + All(O)
 "
     st3 -> rq3;
 
-    st3 [type=startBP, initial="[{'path':path} for path in Path ]", width=400];
+    st3 [type=startBP, initial="[{}  ]", width=400];
     rq3 [type=syncBP, req="['Player X wins']", block="AllMove()"]
 
 

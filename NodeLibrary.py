@@ -29,10 +29,10 @@ class NodeType(metaclass=abc.ABCMeta):
         return [copy.deepcopy(t) for t in tokens]
 
     def state_visualization(self, n: DiagramNode) -> None:
-        n.label = ""
 
 
-        n.label =  "\n-------------"
+        if n.label != "":
+            n.label = n.label + "\n-------------"
 
         if n.height is None:
             n.height = 80
